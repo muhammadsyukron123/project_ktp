@@ -1,6 +1,6 @@
 
 
-import 'package:project_ktp/data/data_source.dart';
+import 'package:project_ktp/data/datasource/data_source.dart';
 import 'package:project_ktp/data/model/regencies_model.dart';
 
 class RegenciesRepository{

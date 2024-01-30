@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:project_ktp/data/data_source.dart';
+import 'package:project_ktp/data/datasource/data_source.dart';
 
 
 DataSource dataSource = DataSource();

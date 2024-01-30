@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:project_ktp/data/datasource/hive_data_source.dart';
 import 'package:project_ktp/data/model/provinces_model.dart';
 import 'package:project_ktp/data/model/regencies_model.dart';
+import 'package:project_ktp/data/repositories/person_repository.dart';
 import 'package:project_ktp/domain/usecases/get_provinces_usecase.dart';
 import 'package:project_ktp/domain/usecases/get_regencies_usecase.dart';
+
+import '../data/person_repositories_impl.dart';
+import '../domain/entities/person_entity.dart';
+import '../domain/usecases/add_person_usecase.dart';
 
 
 
@@ -14,6 +20,7 @@ class CreatePage extends StatefulWidget {
 }
 
 class _CreatePageState extends State<CreatePage> {
+  late AddPersonUseCase addPersonUseCase;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _ttlController = TextEditingController();
   TextEditingController _pekerjaanController = TextEditingController();
@@ -23,15 +30,15 @@ class _CreatePageState extends State<CreatePage> {
   GetRegenciesUseCase getRegenciesUseCase = GetRegenciesUseCase();
   List<ProvincesModel> provinsiItems = []; // Initialize as an empty list
   List<RegenciesModel> regencyItems = [];
-  // String _selectedProvince = '';
-  // String _selectedRegency = '';
   String? _selectedProvinceId;
   RegenciesModel? _selectedRegency;
+  late final PersonRepository _personRepository = PersonRepositoryImpl(hiveDataSource: HiveDataSource());
 
 
   @override
   void initState() {
     super.initState();
+    addPersonUseCase = AddPersonUseCase(repository: _personRepository);
     _fetchProvinces();
   }
 
@@ -150,27 +157,6 @@ class _CreatePageState extends State<CreatePage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
-            // DropdownButtonFormField<RegenciesModel>(
-            //   items: regencyItems.isNotEmpty ? regencyItems
-            //   .map((regency) => DropdownMenuItem<RegenciesModel>(
-            //     value: regency,
-            //     child: Text(regency.name ?? ''),
-            //     ),
-            //   )
-            //   .toList() : [],
-            //   onChanged: (RegenciesModel? newValue) {
-            //     setState(() {
-            //       print(newValue!.name);
-            //       print(newValue!.id);
-            //       _selectedProvinceId = '';
-            //     });
-            //   },
-            //   decoration: InputDecoration(
-            //     hintText: 'Pilih Kabupaten',
-            //     labelText: 'Kabupaten',
-            //     border: OutlineInputBorder(),
-            //   ),),
             SizedBox(height: 20),
             TextFormField(
               autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -204,10 +190,43 @@ class _CreatePageState extends State<CreatePage> {
               },
             ),
             SizedBox(height: 20),
+            // ini adalah tombol untuk menambahkan data baru
+            // ElevatedButton(
+            //   onPressed: () async {
+            //
+            //   },
+            //   child: Text('Submit'),
+            // ),
             ElevatedButton(
               onPressed: () async {
-                await GetProvincesUseCase().execute();
-                print(getProvincesUseCase.execute().toString());
+                if (formKey.currentState!.validate()) {
+                  // Validasi form berhasil, lanjutkan dengan menyimpan data
+                  // Dapatkan nilai dari form
+                  String name = _nameController.text;
+                  String ttl = _ttlController.text;
+                  String pekerjaan = _pekerjaanController.text;
+                  String pendidikan = _pendidikanController.text;
+
+                  // Buat objek PersonEntity
+                  PersonEntity person = PersonEntity(
+                    name: name,
+                    birthDate: ttl,
+                    province: _selectedProvinceId ?? '', // Pastikan nilai sudah terisi
+                    regency: _selectedRegency?.id ?? '', // Pastikan nilai sudah terisi
+                    occupation: pekerjaan,
+                    education: pendidikan,
+                  );
+
+                  // Simpan data ke dalam database Hive
+                  try {
+                    await addPersonUseCase.execute(person);
+                    // Data berhasil disimpan, tambahkan log atau notifikasi
+                    print('Data berhasil disimpan ke dalam database Hive: $person');
+                  } catch (e) {
+                    // Terjadi kesalahan saat menyimpan data, tampilkan pesan error
+                    print('Error saat menyimpan data: $e');
+                  }
+                }
               },
               child: Text('Submit'),
             ),

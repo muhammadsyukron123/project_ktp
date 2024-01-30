@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 
-import '../data_source.dart';
+import '../datasource/data_source.dart';
 import '../model/provinces_model.dart';
 import '../model/regencies_model.dart';
 
