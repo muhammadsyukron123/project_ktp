@@ -23,9 +23,11 @@ class _CreatePageState extends State<CreatePage> {
   GetRegenciesUseCase getRegenciesUseCase = GetRegenciesUseCase();
   List<ProvincesModel> provinsiItems = []; // Initialize as an empty list
   List<RegenciesModel> regencyItems = [];
-  String _selectedProvince = '';
-  String _selectedRegency = '';
-  String _selectedProvinceId = '';
+  // String _selectedProvince = '';
+  // String _selectedRegency = '';
+  String? _selectedProvinceId;
+  RegenciesModel? _selectedRegency;
+
 
   @override
   void initState() {
@@ -111,11 +113,11 @@ class _CreatePageState extends State<CreatePage> {
               onChanged: (ProvincesModel? newValue) {
                 setState(() {
                   _selectedProvinceId = newValue!.id;
-                  _selectedRegency = '';
-                  _fetchRegencies(_selectedProvinceId);
+                  _selectedRegency = null; // Reset kabupaten saat provinsi berubah
+                  regencyItems.clear(); // Kosongkan list kabupaten saat provinsi berubah
+                  _fetchRegencies(_selectedProvinceId!);
                   print(newValue!.name);
                   print(newValue!.id);
-
                 });
               },
               decoration: InputDecoration(
@@ -125,48 +127,50 @@ class _CreatePageState extends State<CreatePage> {
               ),
             ),
             SizedBox(height: 20),
-            // DropdownButtonFormField<RegenciesModel>(
-            //   items: regencyItems
-            //       .where((regency) => regency.provinceId == _selectedProvinceId)
-            //       .map(
-            //         (regency) => DropdownMenuItem<RegenciesModel>(
-            //       value: regency,
-            //       child: Text(regency.name ?? ''),
-            //     ),
-            //   )
-            //       .toList(),
-            //   onChanged: (RegenciesModel? newValue) {
-            //     setState(() {
-            //       print(newValue!.name);
-            //       print(newValue!.id);
-            //     });
-            //   },
-            //   decoration: InputDecoration(
-            //     hintText: 'Pilih Kabupaten',
-            //     labelText: 'Kabupaten',
-            //     border: OutlineInputBorder(),
-            //   ),
-            // ),
             DropdownButtonFormField<RegenciesModel>(
-              items: regencyItems.isNotEmpty ? regencyItems 
-              .map((regency) => DropdownMenuItem<RegenciesModel>(
-                value: regency,
-                child: Text(regency.name ?? ''),
+              value: _selectedRegency,
+              items: regencyItems
+                  .map(
+                    (regency) => DropdownMenuItem<RegenciesModel>(
+                  value: regency,
+                  child: Text(regency.name ?? ''),
                 ),
               )
-              .toList() : [], 
+                  .toList(),
               onChanged: (RegenciesModel? newValue) {
                 setState(() {
+                  _selectedRegency = newValue;
                   print(newValue!.name);
                   print(newValue!.id);
-                  _selectedProvinceId = '';
                 });
               },
               decoration: InputDecoration(
                 hintText: 'Pilih Kabupaten',
                 labelText: 'Kabupaten',
                 border: OutlineInputBorder(),
-              ),),
+              ),
+            ),
+
+            // DropdownButtonFormField<RegenciesModel>(
+            //   items: regencyItems.isNotEmpty ? regencyItems
+            //   .map((regency) => DropdownMenuItem<RegenciesModel>(
+            //     value: regency,
+            //     child: Text(regency.name ?? ''),
+            //     ),
+            //   )
+            //   .toList() : [],
+            //   onChanged: (RegenciesModel? newValue) {
+            //     setState(() {
+            //       print(newValue!.name);
+            //       print(newValue!.id);
+            //       _selectedProvinceId = '';
+            //     });
+            //   },
+            //   decoration: InputDecoration(
+            //     hintText: 'Pilih Kabupaten',
+            //     labelText: 'Kabupaten',
+            //     border: OutlineInputBorder(),
+            //   ),),
             SizedBox(height: 20),
             TextFormField(
               autovalidateMode: AutovalidateMode.onUserInteraction,
