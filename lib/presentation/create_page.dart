@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:project_ktp/data/core/navigation/router_provider.dart';
 import 'package:project_ktp/data/datasource/hive_data_source.dart';
 import 'package:project_ktp/data/model/provinces_model.dart';
 import 'package:project_ktp/data/model/regencies_model.dart';
 import 'package:project_ktp/data/repositories/person_repository.dart';
 import 'package:project_ktp/domain/usecases/get_provinces_usecase.dart';
 import 'package:project_ktp/domain/usecases/get_regencies_usecase.dart';
+import 'package:project_ktp/presentation/list_person_page.dart';
+import 'package:provider/provider.dart';
 
+import '../data/model/person_hive_model.dart';
 import '../data/person_repositories_impl.dart';
 import '../domain/entities/person_entity.dart';
+import '../domain/model/person_model.dart';
 import '../domain/usecases/add_person_usecase.dart';
+import '../domain/usecases/get_person_usecase.dart';
 
 
 
@@ -21,6 +28,7 @@ class CreatePage extends StatefulWidget {
 
 class _CreatePageState extends State<CreatePage> {
   late AddPersonUseCase addPersonUseCase;
+  late GetPersonUseCase getPersonUseCase;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _ttlController = TextEditingController();
   TextEditingController _pekerjaanController = TextEditingController();
@@ -31,14 +39,34 @@ class _CreatePageState extends State<CreatePage> {
   List<ProvincesModel> provinsiItems = []; // Initialize as an empty list
   List<RegenciesModel> regencyItems = [];
   String? _selectedProvinceId;
+  String? selectedProvince;
+  String? selectedRegency;
   RegenciesModel? _selectedRegency;
   late final PersonRepository _personRepository = PersonRepositoryImpl(hiveDataSource: HiveDataSource());
+
+  void _printDataFromHive() async {
+    // Ambil kotak Hive yang berisi data PersonHiveModel
+    var box = await Hive.openBox<PersonHiveModel>(HiveDataSource.boxName);
+    for (var i = 0; i < box.length; i++) {
+      print('Data ke-$i: ${box.getAt(i)}');
+    }
+
+    // Periksa apakah kotak Hive tidak kosong
+    if (box.isNotEmpty) {
+      // Iterasi melalui setiap item dalam kotak Hive dan cetak ke terminal
+
+    } else {
+      print('Kotak Hive kosong.');
+    }
+  }
+
 
 
   @override
   void initState() {
     super.initState();
     addPersonUseCase = AddPersonUseCase(repository: _personRepository);
+    getPersonUseCase = GetPersonUseCase(repository: _personRepository);
     _fetchProvinces();
   }
 
@@ -123,7 +151,9 @@ class _CreatePageState extends State<CreatePage> {
                   _selectedRegency = null; // Reset kabupaten saat provinsi berubah
                   regencyItems.clear(); // Kosongkan list kabupaten saat provinsi berubah
                   _fetchRegencies(_selectedProvinceId!);
+                  selectedProvince = newValue.name;
                   print(newValue!.name);
+
                   print(newValue!.id);
                 });
               },
@@ -147,6 +177,7 @@ class _CreatePageState extends State<CreatePage> {
               onChanged: (RegenciesModel? newValue) {
                 setState(() {
                   _selectedRegency = newValue;
+                  selectedRegency = newValue!.id;
                   print(newValue!.name);
                   print(newValue!.id);
                 });
@@ -191,12 +222,14 @@ class _CreatePageState extends State<CreatePage> {
             ),
             SizedBox(height: 20),
             // ini adalah tombol untuk menambahkan data baru
-            // ElevatedButton(
-            //   onPressed: () async {
-            //
-            //   },
-            //   child: Text('Submit'),
-            // ),
+            ElevatedButton(
+              onPressed: () async {
+                _printDataFromHive();
+
+              },
+              child: Text('Cek data'),
+            ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
@@ -220,7 +253,13 @@ class _CreatePageState extends State<CreatePage> {
                   // Simpan data ke dalam database Hive
                   try {
                     await addPersonUseCase.execute(person);
+                    await getPersonUseCase.execute();
+                    // RouterProvider.of(context)?.appRouter.goToListPage();
                     // Data berhasil disimpan, tambahkan log atau notifikasi
+                    Provider.of<PersonModel>(context, listen: false).addPerson(person);
+                    Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => ListPersonPage()
+                    ));
                     print('Data berhasil disimpan ke dalam database Hive: $person');
                   } catch (e) {
                     // Terjadi kesalahan saat menyimpan data, tampilkan pesan error
@@ -230,6 +269,14 @@ class _CreatePageState extends State<CreatePage> {
               },
               child: Text('Submit'),
             ),
+            SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: (){
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => ListPersonPage()
+                      ));
+                },
+                child: Text('go to list'))
           ],
         ),
       ),
